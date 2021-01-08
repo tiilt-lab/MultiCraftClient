@@ -13,6 +13,9 @@ class EyeTrackerClass:
                 'Interaction_Streams_101.exe',
             )
         ]
+        self.exists = os.path.exists(self.command[0])
+        self.executable = self.system == 'Windows' and self.exists
+
         self.eye_tracking_process = None
         self.supported_commands = [
             'build',
@@ -30,7 +33,7 @@ class EyeTrackerClass:
         self.csv = 'gaze.csv'
 
     def start_eye_tracking(self):
-        if self.system != 'Windows' or self.eye_tracking_process: return
+        if not self.executable or self.eye_tracking_process: return
 
         l_command = self.command + ['-l']
         self.eye_tracking_process = subprocess.Popen(
@@ -41,7 +44,7 @@ class EyeTrackerClass:
         )
 
     def process_transcript(self, transcript):
-        if self.system != 'Windows': return
+        if not self.executable: return
 
         tokens = transcript.split()
         command_words = []
