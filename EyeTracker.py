@@ -69,7 +69,7 @@ class EyeTrackerClass:
     def terminate_eye_tracking(self):
         if self.eye_tracking_process:
             stdout = self.eye_tracking_process.communicate(input=b'.')[0]
-            print(repr(stdout))
+            
             with open(self.csv, 'a') as csv:
                 csv.write('\n'.join(stdout.decode().split('\r\n')))
 
