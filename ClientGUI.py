@@ -25,8 +25,12 @@ RATE = 44100
 # Create an instance of AudioSource
 audio_source = AudioSource(q, True, True)
 
+# File with environment variables
+with open("ENV") as f:
+    ENV = json.load(f)
+
 # MultiCraftTextServer Endpoint
-MCTS_URL = "https://multicraft-text-server.azurewebsites.net/api/httptrigger1"
+MCTS_URL = ENV.get("MCTS_URL", "") 
 
 # EyeTracker Setup
 EYE_TRACKER = EyeTrackerClass()
@@ -61,9 +65,9 @@ def connect_to_server(server_ip):
 
 def connect_to_voice():
     global SPEECH_TO_TEXT, CUSTOMIZATION_ID
-    API_KEY = "5rxG5Xq_tPrfk31RzjXr1Hr002GtA9d7_jev3flMyWcY"
-    SERVICE_URL = "https://api.us-south.speech-to-text.watson.cloud.ibm.com/instances/ec9cf368-d2f0-45e1-8b47-417add989664"
-    CUSTOMIZATION_ID = "5b00b52e-8edf-4993-825d-60a87b21879c"
+    API_KEY = ENV.get("API_KEY", "")
+    SERVICE_URL = ENV.get("SERVICE_URL", "") 
+    CUSTOMIZATION_ID = ENV.get("CUSTOMIZATION_ID", "") 
     authenticator = IAMAuthenticator(API_KEY)
     SPEECH_TO_TEXT = SpeechToTextV1(authenticator=authenticator)
     SPEECH_TO_TEXT.set_service_url(SERVICE_URL)
