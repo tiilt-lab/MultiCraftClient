@@ -239,7 +239,7 @@ class TextFrame(Frame):
         self.frame.pack()
     
     def send_command(self):
-        message = self.entry.get()
+        message = self.entry.get().lower()
         EYE_TRACKER.process_transcript(message)
         try:
             urllib.request.urlopen(
