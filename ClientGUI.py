@@ -103,9 +103,10 @@ class MyRecognizeCallback(RecognizeCallback):
             EYE_TRACKER.process_transcript(transcript)
             try:
                 urllib.request.urlopen(
-                    f"{MCTS_URL}?uuid={CLIENT_NAME}&transcript={transcript.strip().replace(' ', '+')}&server={SERVER}"
+                    f"{MCTS_URL}?uuid={CLIENT_NAME}&transcript={transcript.strip().replace(' ', '+')}&server={SERVER}",
+                    timeout=5
                 )
-            except urllib.error.HTTPError as e:
+            except (urllib.error.HTTPError, socket.timeout):
                 pass
 
     def on_close(self):
@@ -243,9 +244,10 @@ class TextFrame(Frame):
         EYE_TRACKER.process_transcript(message)
         try:
             urllib.request.urlopen(
-                f"{MCTS_URL}?uuid={CLIENT_NAME}&transcript={message.strip().replace(' ', '+')}&server={SERVER}"
+                f"{MCTS_URL}?uuid={CLIENT_NAME}&transcript={message.strip().replace(' ', '+')}&server={SERVER}",
+                timeout=5
             )
-        except urllib.error.HTTPError:
+        except (urllib.error.HTTPError, socket.timeout):
             pass
 
         self.counter += 1

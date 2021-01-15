@@ -1,5 +1,6 @@
 import os
 import platform
+import signal
 import subprocess
 
 class EyeTrackerClass:
@@ -36,12 +37,12 @@ class EyeTrackerClass:
         if not self.executable or self.eye_tracking_process: return
 
         l_command = self.command + ['-l']
-        self.eye_tracking_process = subprocess.Popen(
-            l_command,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        with open(self.csv, 'a') as csv:
+            self.eye_tracking_process = subprocess.Popen(
+                l_command,
+                stdin=subprocess.PIPE,
+                stdout=csv,
+            )
 
     def process_transcript(self, transcript):
         if not self.executable: return
@@ -56,18 +57,9 @@ class EyeTrackerClass:
         elif 'build' in command_words or 'place' in command_words:
             t_command += ['-d']
         
-        self.terminate_eye_tracking()
         stdout = subprocess.check_output(t_command)
-        with open(self.csv, 'a') as csv:
-            csv.write('\n'.join(stdout.decode().split('\r\n')))
-
-        self.start_eye_tracking()
 
     def terminate_eye_tracking(self):
         if self.eye_tracking_process:
-            stdout = self.eye_tracking_process.communicate(input=b'.')[0]
-            
-            with open(self.csv, 'a') as csv:
-                csv.write('\n'.join(stdout.decode().split('\r\n')))
-
+            self.eye_tracking_process.send_signal(signal.CTRL_C_EVENT)
             self.eye_tracking_process = None
