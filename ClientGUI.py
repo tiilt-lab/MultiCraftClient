@@ -12,7 +12,7 @@ from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from ibm_watson import SpeechToTextV1
 from ibm_watson.websocket import RecognizeCallback, AudioSource
 
-from EyeTracker import process_eye_tracking
+from EyeTracker import EyeTrackerClass
 
 # PyAudio Configuration
 CHUNK = 1024
@@ -24,6 +24,16 @@ RATE = 44100
 
 # Create an instance of AudioSource
 audio_source = AudioSource(q, True, True)
+
+# File with environment variables
+with open("ENV") as f:
+    ENV = json.load(f)
+
+# MultiCraftTextServer Endpoint
+MCTS_URL = ENV.get("MCTS_URL", "") 
+
+# EyeTracker Setup
+EYE_TRACKER = EyeTrackerClass()
 
 def get_uuid(mc_username):
     global CLIENT_NAME
@@ -55,9 +65,9 @@ def connect_to_server(server_ip):
 
 def connect_to_voice():
     global SPEECH_TO_TEXT, CUSTOMIZATION_ID
-    API_KEY = "5rxG5Xq_tPrfk31RzjXr1Hr002GtA9d7_jev3flMyWcY"
-    SERVICE_URL = "https://api.us-south.speech-to-text.watson.cloud.ibm.com/instances/ec9cf368-d2f0-45e1-8b47-417add989664"
-    CUSTOMIZATION_ID = "5b00b52e-8edf-4993-825d-60a87b21879c"
+    API_KEY = ENV.get("API_KEY", "")
+    SERVICE_URL = ENV.get("SERVICE_URL", "") 
+    CUSTOMIZATION_ID = ENV.get("CUSTOMIZATION_ID", "") 
     authenticator = IAMAuthenticator(API_KEY)
     SPEECH_TO_TEXT = SpeechToTextV1(authenticator=authenticator)
     SPEECH_TO_TEXT.set_service_url(SERVICE_URL)
@@ -90,12 +100,13 @@ class MyRecognizeCallback(RecognizeCallback):
         if(data['results'][0]['final']):
             transcript = data['results'][0]['alternatives'][0]['transcript'].lower()
             voice_frame.voice_command(transcript)
-            process_eye_tracking(transcript)
+            EYE_TRACKER.process_transcript(transcript)
             try:
                 urllib.request.urlopen(
-                    f"https://multicraft-text-server.azurewebsites.net/api/httptrigger1?uuid={CLIENT_NAME}&transcript={transcript.strip().replace(' ', '+')}&server={SERVER}"
+                    f"{MCTS_URL}?uuid={CLIENT_NAME}&transcript={transcript.strip().replace(' ', '+')}&server={SERVER}",
+                    timeout=5
                 )
-            except urllib.error.HTTPError as e:
+            except (urllib.error.HTTPError, socket.timeout):
                 pass
 
     def on_close(self):
@@ -135,6 +146,9 @@ class Frame():
 class UsernameFrame(Frame):
     def __init__(self, parent):
         super().__init__(parent)
+
+        EYE_TRACKER.start_eye_tracking()
+
         self.label = tk.Label(master=self.frame, text='What is your Minecraft username?', font=label_font1)
         self.entry = tk.Entry(master=self.frame)
         self.entry.bind('<Return>', lambda _: self.get_username())
@@ -226,13 +240,14 @@ class TextFrame(Frame):
         self.frame.pack()
     
     def send_command(self):
-        message = self.entry.get()
-        process_eye_tracking(message)
+        message = self.entry.get().lower()
+        EYE_TRACKER.process_transcript(message)
         try:
             urllib.request.urlopen(
-                f"https://multicraft-text-server.azurewebsites.net/api/httptrigger1?uuid={CLIENT_NAME}&transcript={message.strip().replace(' ', '+')}&server={SERVER}"
+                f"{MCTS_URL}?uuid={CLIENT_NAME}&transcript={message.strip().replace(' ', '+')}&server={SERVER}",
+                timeout=5
             )
-        except urllib.error.HTTPError:
+        except (urllib.error.HTTPError, socket.timeout):
             pass
 
         self.counter += 1
@@ -296,7 +311,12 @@ label_font1 = tk.font.Font(font=None, size=20)
 label_font2 = tk.font.Font(font=None, size=16)
 button_font = tk.font.Font(font=None, size=16)
 
+def on_close():
+    EYE_TRACKER.terminate_eye_tracking()
+    root.destroy()
+
 username_frame = UsernameFrame(root)
-quit_button = tk.Button(text='Quit', command=root.destroy, font=button_font)
+quit_button = tk.Button(text='Quit', command=on_close, font=button_font)
 quit_button.pack(side=tk.BOTTOM, pady=(0, 40))
+root.protocol("WM_DELETE_WINDOW", on_close)
 root.mainloop()
