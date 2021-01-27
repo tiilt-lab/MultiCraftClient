@@ -2,7 +2,6 @@ import json
 import os
 import socket
 import tkinter as tk
-from tkinter.constants import FALSE
 import tkinter.font
 import urllib.request
 import uuid
