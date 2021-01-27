@@ -1,16 +1,17 @@
 import os
 import platform
+import random
 import signal
 import subprocess
 
 class EyeTrackerClass:
 
-    def __init__(self):  
+    def __init__(self):
         self.system = platform.system()
         self.command = [
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                'Tobii', 
+                'Tobii',
                 'Interaction_Streams_101.exe',
             )
         ]
@@ -31,13 +32,13 @@ class EyeTrackerClass:
             'clone',
             'give'
         ]
-        self.csv = 'gaze.csv'
+        self.csv = f'gaze{random.randint(1, 1000000)}.csv'
 
     def start_eye_tracking(self):
         if not self.executable or self.eye_tracking_process: return
 
         l_command = self.command + ['-l']
-        with open(self.csv, 'a') as csv:
+        with open(self.csv, 'w') as csv:
             self.eye_tracking_process = subprocess.Popen(
                 l_command,
                 stdin=subprocess.PIPE,
@@ -49,14 +50,14 @@ class EyeTrackerClass:
 
         tokens = transcript.split()
         command_words = [word for word in tokens if word in self.supported_commands]
-        if not command_words or command_words[0] != 'track': return 
+        if not command_words or command_words[0] != 'track': return
 
         t_command = self.command.copy()
         if 'move' in command_words:
             t_command += ['-m']
         elif 'build' in command_words or 'place' in command_words:
             t_command += ['-d']
-        
+
         stdout = subprocess.check_output(t_command)
 
     def terminate_eye_tracking(self):

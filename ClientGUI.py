@@ -1,6 +1,8 @@
 import json
+import os
 import socket
 import tkinter as tk
+from tkinter.constants import FALSE
 import tkinter.font
 import urllib.request
 import uuid
@@ -30,10 +32,12 @@ with open("ENV") as f:
     ENV = json.load(f)
 
 # MultiCraftTextServer Endpoint
-MCTS_URL = ENV.get("MCTS_URL", "") 
+MCTS_URL = ENV.get("MCTS_URL", "")
 
 # EyeTracker Setup
 EYE_TRACKER = EyeTrackerClass()
+
+SERVER = ''
 
 def get_uuid(mc_username):
     global CLIENT_NAME
@@ -66,8 +70,8 @@ def connect_to_server(server_ip):
 def connect_to_voice():
     global SPEECH_TO_TEXT, CUSTOMIZATION_ID
     API_KEY = ENV.get("API_KEY", "")
-    SERVICE_URL = ENV.get("SERVICE_URL", "") 
-    CUSTOMIZATION_ID = ENV.get("CUSTOMIZATION_ID", "") 
+    SERVICE_URL = ENV.get("SERVICE_URL", "")
+    CUSTOMIZATION_ID = ENV.get("CUSTOMIZATION_ID", "")
     authenticator = IAMAuthenticator(API_KEY)
     SPEECH_TO_TEXT = SpeechToTextV1(authenticator=authenticator)
     SPEECH_TO_TEXT.set_service_url(SERVICE_URL)
@@ -139,10 +143,10 @@ class Frame():
     def __init__(self, parent):
         self.parent = parent
         self.frame = tk.Frame(self.parent)
-    
+
     def close_frame(self):
         self.frame.destroy()
-        
+
 class UsernameFrame(Frame):
     def __init__(self, parent):
         super().__init__(parent)
@@ -187,7 +191,7 @@ class ServerFrame(Frame):
         self.button.pack()
         self.error_label.pack()
         self.frame.pack()
-    
+
     def get_ip(self):
         ip = self.entry.get()
         message = connect_to_server(ip)
@@ -210,7 +214,7 @@ class InputFrame(Frame):
         self.button1.pack(side=tk.LEFT)
         self.button2.pack(side=tk.RIGHT)
         self.frame.pack()
-    
+
     def use_text(self):
         self.close_frame()
         text_label = tk.Label(text='Using text commands', font=label_font2)
@@ -238,7 +242,7 @@ class TextFrame(Frame):
         self.button.pack()
         self.msg_label.pack()
         self.frame.pack()
-    
+
     def send_command(self):
         message = self.entry.get().lower()
         EYE_TRACKER.process_transcript(message)
@@ -273,7 +277,7 @@ class VoiceFrame(Frame):
 
         self.recognize_thread = Thread(target=recognize_using_websocket, args=())
         self.recognize_thread.start()
-        
+
         self.prompt_lbl = tk.Label(master=self.frame, text='Transcript:', font=label_font1)
         self.transcript_lbl = tk.Label(master=self.frame, text='__________')
         self.counter = 0
@@ -289,14 +293,14 @@ class VoiceFrame(Frame):
         self.transcript_lbl.config(text=transcript)
         self.counter += 1
         self.msg_label.config(text=f'[{self.counter}] Command sent')
-    
+
     def stop(self):
         self.stream.stop_stream()
         self.stream.close()
         self.audio.terminate()
         audio_source.completed_recording()
         self.msg_label.config(text='Recording stopped')
-    
+
 
 root = tk.Tk()
 root.title('Multicraft')
@@ -313,7 +317,23 @@ button_font = tk.font.Font(font=None, size=16)
 
 def on_close():
     EYE_TRACKER.terminate_eye_tracking()
+    send_gaze_data()
     root.destroy()
+
+def send_gaze_data():
+    if not os.path.exists(EYE_TRACKER.csv) or not SERVER: return
+
+    try:
+        with open(EYE_TRACKER.csv, "rb") as f:
+            data = f.read()
+            if not data: return
+
+            file_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            file_socket.connect((SERVER, 5004))
+            file_socket.send(data)
+            file_socket.close()
+    except (socket.timeout, TimeoutError):
+        pass
 
 username_frame = UsernameFrame(root)
 quit_button = tk.Button(text='Quit', command=on_close, font=button_font)
