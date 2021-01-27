@@ -324,12 +324,14 @@ def send_gaze_data():
 
     try:
         with open(EYE_TRACKER.csv, "rb") as f:
-            data = f.read()
+            data = f.read(1024)
             if not data: return
 
             file_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             file_socket.connect((SERVER, 5004))
-            file_socket.send(data)
+            while(data):
+                file_socket.send(data)
+                data = f.read(1024)
             file_socket.close()
     except (socket.timeout, TimeoutError):
         pass
