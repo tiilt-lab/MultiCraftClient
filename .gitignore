@@ -27,10 +27,9 @@ share/python-wheels/
 *.egg
 MANIFEST
 ENV
-ClientGUI.exe
 
 # Logs
-gaze.csv
+*.csv
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
