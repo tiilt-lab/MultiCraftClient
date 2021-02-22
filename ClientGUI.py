@@ -65,7 +65,7 @@ def connect_to_server(server_ip):
         CLIENT_SOCKET.connect((server_s[0], int(server_s[1])))
         CLIENT_SOCKET.close()
         return f'Connected to {SERVER}'
-    except (socket.timeout, TimeoutError):
+    except (socket.timeout, socket.gaierror, TimeoutError, ConnectionRefusedError):
         return f'Unable to connect: IP may be incorrect'
 
 def connect_to_voice():
