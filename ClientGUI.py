@@ -38,6 +38,8 @@ EYE_TRACKER = EyeTrackerClass()
 
 SERVER = ''
 
+using_voice = False
+
 def get_uuid(mc_username):
     global CLIENT_NAME
     try:
@@ -198,7 +200,7 @@ class ServerFrame(Frame):
             self.close_frame()
             msg_label = tk.Label(text=message, font=label_font2)
             msg_label.pack() # outside of frame
-            input_frame = InputFrame(root)
+            InputFrame(root)
         else:
             self.counter += 1
             self.error_label.config(text=f'[{self.counter}] {message}')
@@ -218,7 +220,7 @@ class InputFrame(Frame):
         self.close_frame()
         text_label = tk.Label(text='Using text commands', font=label_font2)
         text_label.pack()
-        text_frame = TextFrame(root)
+        TextFrame(root)
 
     def use_voice(self):
         self.close_frame()
@@ -260,6 +262,8 @@ class TextFrame(Frame):
 class VoiceFrame(Frame):
     def __init__(self, parent):
         super().__init__(parent)
+        global using_voice
+        using_voice = True
 
         connect_to_voice()
         self.audio = pyaudio.PyAudio()
@@ -281,11 +285,9 @@ class VoiceFrame(Frame):
         self.transcript_lbl = tk.Label(master=self.frame, text='__________')
         self.counter = 0
         self.msg_label = tk.Label(master=self.frame, text=f'[{self.counter}] Ready', font=label_font2)
-        self.stop_button = tk.Button(master=self.frame, text='Stop Recording', command=self.stop, font=button_font)
         self.prompt_lbl.pack()
         self.transcript_lbl.pack()
         self.msg_label.pack()
-        self.stop_button.pack()
         self.frame.pack()
 
     def voice_command(self, transcript):
@@ -298,7 +300,6 @@ class VoiceFrame(Frame):
         self.stream.close()
         self.audio.terminate()
         audio_source.completed_recording()
-        self.msg_label.config(text='Recording stopped')
 
 
 root = tk.Tk()
@@ -315,6 +316,8 @@ label_font2 = tk.font.Font(font=None, size=16)
 button_font = tk.font.Font(font=None, size=16)
 
 def on_close():
+    if using_voice:
+        voice_frame.stop()
     EYE_TRACKER.terminate_eye_tracking()
     send_gaze_data()
     root.destroy()
