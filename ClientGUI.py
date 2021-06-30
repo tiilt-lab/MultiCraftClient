@@ -13,7 +13,7 @@ from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from ibm_watson import SpeechToTextV1
 from ibm_watson.websocket import RecognizeCallback, AudioSource
 
-from EyeTracker import EyeTrackerClass
+from EyeTracker import EyeTracker
 
 # PyAudio Configuration
 CHUNK = 1024
@@ -34,7 +34,7 @@ with open("ENV") as f:
 MCTS_URL = ENV.get("MCTS_URL", "")
 
 # EyeTracker Setup
-EYE_TRACKER = EyeTrackerClass()
+EYE_TRACKER = EyeTracker()
 
 SERVER = ''
 

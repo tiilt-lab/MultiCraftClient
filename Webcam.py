@@ -182,6 +182,7 @@ def print_eye_pos(eye_pos):
     if right != 0:
         print("Right:", directions[right])
 
+
 class Webcam:
     def __init__(self, debug=False):
         self._cap = cv2.VideoCapture(0) # initialize video capture
@@ -236,6 +237,8 @@ class Webcam:
         self.running = False
 
 
+import time
+
 class Timer:
 
     def __init__(self):
@@ -286,6 +289,8 @@ class GazerBeam:
         global WKEY_UP
         dwell_action, log_mode = config
 
+        print(dt.log(), f"{pos[0]}, {pos[1]}")
+
         # check if eye position has changed
         displace_left, displace_right = (pos[0] - prev_pos[0], pos[1] - prev_pos[1])
         moved = (displace_left != 0 and displace_right != 0)
@@ -296,7 +301,7 @@ class GazerBeam:
             dt.stop()
             if dwell_action == DWELL_MOVE and not WKEY_UP:
                 WKEY_UP = True
-                pyautiogui.keyUp('w')
+                pyautogui.keyUp('w')
 
         if dt.running and dt.elapsed() > 3:
             if dwell_action == DWELL_STOP:
@@ -334,7 +339,7 @@ class GazerBeam:
         while self.running:
             if ct.elapsed() > 1/60:
                 pos = wc.get_eye_pos()
-                handle_eye_pos(pos, prev_pos, dt, config)
+                self.handle_eye_pos(pos, prev_pos, dt, config)
                 prev_pos = pos
                 ct.run()
 
