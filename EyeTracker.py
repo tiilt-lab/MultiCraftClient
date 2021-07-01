@@ -16,7 +16,7 @@ class EyeTracker:
         import random
 
         self.eye_tracking_process = None
-        self.csv = f'gaze{random.randint(1, 1000000)}.csv'
+        self.csv = f'gaze{random.randint(1, 999999):06d}.csv'
         self.csv_handle = None
 
     def start_eye_tracking(self):
@@ -31,8 +31,7 @@ class EyeTracker:
             )
         else:
             self.eye_tracking_process = GazerBeam(['log'], stdout=self.csv_handle)
-            self.eye_tracking_process = (self.eye_tracking_process, 
-                                        Thread(target=self.eye_tracking_process.run))
+            self.eye_tracking_process = (self.eye_tracking_process, Thread(target=self.eye_tracking_process.run))
             self.eye_tracking_process[1].start()
 
     def process_transcript(self, transcript):
@@ -56,12 +55,7 @@ class EyeTracker:
             elif 'build' in command_words or 'place' in command_words:
                 command = ['stop']
 
-            self.eye_tracking_process = GazerBeam(command)
-            self.eye_tracking_process = (self.eye_tracking_process, 
-                                         Thread(target=self.eye_tracking_process.run))
-            
-            self.eye_tracking_process[1].start()
-            self.eye_tracking_process[1].join()
+            GazerBeam(command).run()
 
     def terminate_eye_tracking(self):
         if self.eye_tracking_process:
