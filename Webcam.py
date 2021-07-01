@@ -259,7 +259,7 @@ class Timer:
     def elapsed(self):
         return time.time() - self.start if self.running else 0
 
-
+import sys
 import pyautogui
 
 DIMENSIONS = pyautogui.size()
@@ -270,8 +270,9 @@ DWELL_MOVE = 2
 WKEY_UP = False
 
 class GazerBeam:
-    def __init__(self, args):
+    def __init__(self, args, stdout=sys.stdout):
         self.args = args
+        self.stdout = stdout
 
     def handle_args(self):
         log_mode = "log" in self.args
@@ -289,7 +290,8 @@ class GazerBeam:
         global WKEY_UP
         dwell_action, log_mode = config
 
-        print(dt.log(), f"{pos[0]}, {pos[1]}")
+        if log_mode:
+            print(dt.log(), f"{pos[0]}, {pos[1]}")
 
         # check if eye position has changed
         displace_left, displace_right = (pos[0] - prev_pos[0], pos[1] - prev_pos[1])
@@ -336,12 +338,19 @@ class GazerBeam:
         self.running = True
         prev_pos = (0, 0)
 
+        # set stdout
+        stdout = sys.stdout
+        sys.stdout = self.stdout
+
         while self.running:
             if ct.elapsed() > 1/60:
                 pos = wc.get_eye_pos()
                 self.handle_eye_pos(pos, prev_pos, dt, config)
                 prev_pos = pos
                 ct.run()
+
+        # reset stdout
+        sys.stdout = stdout
 
         wc.terminate()
 

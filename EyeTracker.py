@@ -8,7 +8,6 @@ if USE_TOBII:
     import signal
     import subprocess
 else:
-    from contextlib import redirect_stdout
     from threading import Thread
     from Webcam import GazerBeam
 
@@ -18,22 +17,23 @@ class EyeTracker:
 
         self.eye_tracking_process = None
         self.csv = f'gaze{random.randint(1, 1000000)}.csv'
+        self.csv_handle = None
 
     def start_eye_tracking(self):
-        with open(self.csv, 'w') as csv:
-            if USE_TOBII:
-                l_command = [EXEC_PATH, '-l']
-                self.eye_tracking_process = subprocess.Popen(
-                    l_command,
-                    stdin=subprocess.PIPE,
-                    stdout=csv,
-                )
-            else:
-                self.eye_tracking_process = GazerBeam(['log'])
-                self.eye_tracking_process = (self.eye_tracking_process, 
-                                            Thread(target=self.eye_tracking_process.run))
-                with redirect_stdout(csv):
-                    self.eye_tracking_process[1].start()
+        self.csv_handle = open(self.csv, 'w')
+
+        if USE_TOBII:
+            l_command = [EXEC_PATH, '-l']
+            self.eye_tracking_process = subprocess.Popen(
+                l_command,
+                stdin=subprocess.PIPE,
+                stdout=self.csv_handle,
+            )
+        else:
+            self.eye_tracking_process = GazerBeam(['log'], stdout=self.csv_handle)
+            self.eye_tracking_process = (self.eye_tracking_process, 
+                                        Thread(target=self.eye_tracking_process.run))
+            self.eye_tracking_process[1].start()
 
     def process_transcript(self, transcript):
         tokens = transcript.split()
@@ -59,6 +59,7 @@ class EyeTracker:
             self.eye_tracking_process = GazerBeam(command)
             self.eye_tracking_process = (self.eye_tracking_process, 
                                          Thread(target=self.eye_tracking_process.run))
+            
             self.eye_tracking_process[1].start()
             self.eye_tracking_process[1].join()
 
@@ -70,4 +71,7 @@ class EyeTracker:
                 self.eye_tracking_process[0].terminate()
                 self.eye_tracking_process[1].join()
 
+        self.csv_handle.close()
+
+        self.csv_handle = None
         self.eye_tracking_process = None
