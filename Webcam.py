@@ -259,6 +259,7 @@ class Timer:
     def elapsed(self):
         return time.time() - self.start if self.running else 0
 
+import keyboard
 import sys
 import pyautogui
 
@@ -273,6 +274,7 @@ class GazerBeam:
     def __init__(self, args, stdout=sys.stdout):
         self.args = args
         self.stdout = stdout
+        keyboard.add_hotkey('.', self.terminate)
 
     def handle_args(self):
         log_mode = "log" in self.args
@@ -326,10 +328,6 @@ class GazerBeam:
         ct = Timer()
         ct.run()
 
-        # initialize dwelling timer
-        dt = Timer()
-        dt.run()
-
         # initialize webcam and run thread
         wc = Webcam()
         th = Thread(target=wc.run, name='webcam')
@@ -341,6 +339,10 @@ class GazerBeam:
         # set stdout
         stdout = sys.stdout
         sys.stdout = self.stdout
+
+        # initialize dwelling timer
+        dt = Timer()
+        dt.run()
 
         while self.running:
             if ct.elapsed() > 1/60:

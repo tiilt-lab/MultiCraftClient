@@ -8,7 +8,6 @@ if USE_TOBII:
     import signal
     import subprocess
 else:
-    from threading import Thread
     from Webcam import GazerBeam
 
 class EyeTracker:
@@ -29,10 +28,6 @@ class EyeTracker:
                 stdin=subprocess.PIPE,
                 stdout=self.csv_handle,
             )
-        else:
-            self.eye_tracking_process = GazerBeam(['log'], stdout=self.csv_handle)
-            self.eye_tracking_process = (self.eye_tracking_process, Thread(target=self.eye_tracking_process.run))
-            self.eye_tracking_process[1].start()
 
     def process_transcript(self, transcript):
         tokens = transcript.split()
@@ -55,15 +50,11 @@ class EyeTracker:
             elif 'build' in command_words or 'place' in command_words:
                 command = ['stop']
 
-            GazerBeam(command).run()
+            GazerBeam(command, self.csv_handle).run()
 
     def terminate_eye_tracking(self):
         if self.eye_tracking_process:
-            if USE_TOBII:
-                self.eye_tracking_process.send_signal(signal.CTRL_C_EVENT)
-            else:
-                self.eye_tracking_process[0].terminate()
-                self.eye_tracking_process[1].join()
+            self.eye_tracking_process.send_signal(signal.CTRL_C_EVENT)
 
         self.csv_handle.close()
 

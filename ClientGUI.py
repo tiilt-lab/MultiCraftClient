@@ -332,7 +332,6 @@ def on_close():
         voice_frame.stop()
     EYE_TRACKER.terminate_eye_tracking()
     send_gaze_data()
-    os.remove(EYE_TRACKER.csv)
     root.destroy()
 
 def send_gaze_data():
