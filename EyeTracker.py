@@ -1,66 +1,62 @@
 import os
-import platform
-import random
-import signal
-import subprocess
 
-class EyeTrackerClass:
+EXEC_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Tobii', 'Interaction_Streams_101.exe')
+USE_TOBII = os.name == 'nt' and os.path.exists(EXEC_PATH)
+CMD_WORDS = ['build', 'place', 'move', 'track', 'turn', 'tilt', 'undo', 'redo', 'store', 'clone', 'give']
 
+if USE_TOBII:
+    import signal
+    import subprocess
+else:
+    from Webcam import GazerBeam
+
+class EyeTracker:
     def __init__(self):
-        self.system = platform.system()
-        self.command = [
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                'Tobii',
-                'Interaction_Streams_101.exe',
-            )
-        ]
-        self.exists = os.path.exists(self.command[0])
-        self.executable = self.system == 'Windows' and self.exists
+        import random
 
         self.eye_tracking_process = None
-        self.supported_commands = [
-            'build',
-            'place',
-            'move',
-            'track',
-            'turn',
-            'tilt',
-            'undo',
-            'redo',
-            'store',
-            'clone',
-            'give'
-        ]
-        self.csv = f'gaze{random.randint(1, 1000000)}.csv'
+        self.csv = f'gaze{random.randint(1, 999999):06d}.csv'
+        self.csv_handle = None
 
     def start_eye_tracking(self):
-        if not self.executable or self.eye_tracking_process: return
+        self.csv_handle = open(self.csv, 'w')
 
-        l_command = self.command + ['-l']
-        with open(self.csv, 'w') as csv:
+        if USE_TOBII:
+            l_command = [EXEC_PATH, '-l']
             self.eye_tracking_process = subprocess.Popen(
                 l_command,
                 stdin=subprocess.PIPE,
-                stdout=csv,
+                stdout=self.csv_handle,
             )
 
     def process_transcript(self, transcript):
-        if not self.executable: return
-
         tokens = transcript.split()
-        command_words = [word for word in tokens if word in self.supported_commands]
-        if not command_words or command_words[0] != 'track': return
+        command_words = [word for word in tokens if word in CMD_WORDS]
+        if not command_words or command_words[0] != 'track':
+            return
 
-        t_command = self.command.copy()
-        if 'move' in command_words:
-            t_command += ['-m']
-        elif 'build' in command_words or 'place' in command_words:
-            t_command += ['-d']
+        if USE_TOBII:
+            t_command = [EXEC_PATH]
+            if 'move' in command_words:
+                t_command += ['-m']
+            elif 'build' in command_words or 'place' in command_words:
+                t_command += ['-d']
 
-        stdout = subprocess.check_output(t_command)
+            _ = subprocess.check_output(t_command)
+        else:
+            command = []
+            if 'move' in command_words:
+                command = ['move']
+            elif 'build' in command_words or 'place' in command_words:
+                command = ['stop']
+
+            GazerBeam(command, self.csv_handle).run()
 
     def terminate_eye_tracking(self):
         if self.eye_tracking_process:
             self.eye_tracking_process.send_signal(signal.CTRL_C_EVENT)
-            self.eye_tracking_process = None
+
+        self.csv_handle.close()
+
+        self.csv_handle = None
+        self.eye_tracking_process = None

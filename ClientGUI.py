@@ -1,10 +1,12 @@
 import json
 import os
 import socket
+import sys
 import tkinter as tk
 import tkinter.font
 import urllib.request
 import uuid
+
 from queue import Queue, Full
 from threading import Thread
 
@@ -13,7 +15,17 @@ from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from ibm_watson import SpeechToTextV1
 from ibm_watson.websocket import RecognizeCallback, AudioSource
 
-from EyeTracker import EyeTrackerClass
+from EyeTracker import EyeTracker
+
+def resource_path(relative_path):
+    """Get absolute path to a resource, works for dev and for PyInstaller executables"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    
+    return os.path.join(base_path, relative_path)
 
 # PyAudio Configuration
 CHUNK = 1024
@@ -27,14 +39,14 @@ RATE = 44100
 audio_source = AudioSource(q, True, True)
 
 # File with environment variables
-with open("ENV") as f:
+with open(resource_path("ENV")) as f:
     ENV = json.load(f)
 
 # MultiCraftTextServer Endpoint
 MCTS_URL = ENV.get("MCTS_URL", "")
 
 # EyeTracker Setup
-EYE_TRACKER = EyeTrackerClass()
+EYE_TRACKER = EyeTracker()
 
 SERVER = ''
 
